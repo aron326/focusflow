@@ -353,21 +353,32 @@
     // --- 4. 音訊引擎 (YouTube API & Local) ---
     
     // YouTube API Setup
+    // --- 修改後的 YouTube API Setup ---
     var player;
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
             height: '0',
             width: '0',
-            videoId: '5L_u_hUV4Rk', // 預設 Tchaikovsky Andante Cantabile
+            videoId: document.getElementById('ytUrl').value || 'jfKfPfyJRdk', // 自動抓取輸入框的 ID
             playerVars: {
                 'playsinline': 1,
-                'loop': 1, // 循環播放
-                'controls': 0
+                'controls': 0,
+                'rel': 0,        // 結束不顯示推薦影片
+                'fs': 0          // 禁止全螢幕
             },
             events: {
-                'onReady': onPlayerReady
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange // ★ 新增這行：監聽狀態改變
             }
         });
+    }
+
+    // ★ 新增這個函式來控制循環播放
+    function onPlayerStateChange(event) {
+        // YT.PlayerState.ENDED 的代碼是 0
+        if (event.data === 0) {
+            player.playVideo(); 
+        }
     }
 
     function onPlayerReady(event) {
@@ -526,5 +537,6 @@
 
 </body>
 </html>
+
 
 
