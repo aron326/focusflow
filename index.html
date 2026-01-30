@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FocusFlow Pro - 番茄鐘</title>
+    <title>FocusFlow v3.0</title>
     <style>
         :root {
             --bg-color: #121212;
             --card-bg: #1e1e1e;
-            --primary: #ff6b6b; /* 番茄紅 */
-            --accent: #4ecdc4;
+            --primary: #ff6b6b;  /* 工作紅 */
+            --break: #4ecdc4;    /* 休息綠 */
             --text: #ffffff;
-            --secondary-text: #aaaaaa;
+            --sub-text: #888888;
+            --ring-bg: #2a2a2a;
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text);
             display: flex;
@@ -24,157 +25,183 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            transition: background 0.3s;
         }
 
-        /* 主容器 */
-        .container {
+        /* 主面板 */
+        .dashboard {
             background-color: var(--card-bg);
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
             width: 90%;
-            max-width: 500px;
+            max-width: 450px;
             text-align: center;
-        }
-
-        /* 計時器顯示 */
-        .timer-display {
-            font-size: 6rem;
-            font-weight: bold;
-            font-variant-numeric: tabular-nums;
-            margin: 20px 0;
-            color: var(--primary);
-            text-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
-        }
-
-        /* 預設按鈕區 */
-        .presets {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            gap: 5px;
-        }
-
-        .preset-btn {
-            background: #2c2c2c;
-            border: 1px solid #333;
-            color: var(--text);
-            padding: 10px 5px;
-            border-radius: 10px;
-            cursor: pointer;
-            flex: 1;
-            font-size: 0.8rem;
-            transition: all 0.2s;
             position: relative;
         }
 
+        /* 1. 日期時間顯示 */
+        .status-bar {
+            font-size: 0.9rem;
+            color: var(--sub-text);
+            margin-bottom: 20px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        /* 4. 任務輸入欄 */
+        .task-input-group {
+            margin-bottom: 20px;
+        }
+        .task-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid #333;
+            color: var(--text);
+            font-size: 1.3rem;
+            text-align: center;
+            padding: 8px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .task-input:focus {
+            border-bottom-color: var(--primary);
+        }
+        .task-input::placeholder { color: #444; }
+
+        /* 2. 視覺化圖形進度條 (SVG) */
+        .timer-wrapper {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            margin: 0 auto 25px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timer-svg {
+            transform: rotate(-90deg); /* 從正上方開始 */
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0; left: 0;
+        }
+
+        .circle-bg {
+            fill: none;
+            stroke: var(--ring-bg);
+            stroke-width: 8;
+        }
+
+        .circle-progress {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 8;
+            stroke-linecap: round; /* 圓頭 */
+            stroke-dasharray: 754; /* 2 * PI * 120 */
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear, stroke 0.3s;
+            filter: drop-shadow(0 0 4px var(--primary)); /* 發光效果 */
+        }
+
+        /* 時間數字 */
+        .timer-display {
+            z-index: 10;
+            font-size: 4.5rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        /* 按鈕群組 */
+        .presets {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        .preset-btn {
+            background: #2c2c2c;
+            border: 1px solid #333;
+            color: #ccc;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: 0.2s;
+        }
         .preset-btn:hover, .preset-btn.active {
-            background: var(--primary);
-            color: #000;
+            background: var(--text);
+            color: var(--bg-color);
             font-weight: bold;
         }
 
-        /* 編輯小圖示 */
-        .edit-hint {
-            font-size: 0.6rem;
-            opacity: 0.5;
-            display: block;
-            margin-top: 2px;
-        }
-
-        /* 核心控制按鈕 */
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
+        .controls { display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; }
         .btn-main {
-            padding: 15px 40px;
-            font-size: 1.2rem;
+            padding: 12px 40px;
+            font-size: 1.1rem;
             border: none;
             border-radius: 50px;
             cursor: pointer;
             font-weight: bold;
             transition: transform 0.1s;
         }
+        .btn-start { background-color: var(--primary); color: white; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4); }
+        .btn-reset { background-color: transparent; border: 2px solid #444; color: #888; }
+        .btn-main:active { transform: scale(0.96); }
 
-        .btn-start { background-color: var(--primary); color: white; }
-        .btn-reset { background-color: transparent; border: 2px solid #555; color: var(--secondary-text); }
-        .btn-main:active { transform: scale(0.95); }
-
-        /* 音樂控制面板 */
+        /* 音樂面板 (精簡化) */
         .audio-panel {
-            background: #252525;
+            background: #181818;
             padding: 15px;
-            border-radius: 15px;
+            border-radius: 12px;
             text-align: left;
+            border: 1px solid #333;
         }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .switch-group { display: flex; align-items: center; gap: 10px; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.9rem; color: #aaa; }
+        .switch-group { display: flex; align-items: center; gap: 8px; cursor: pointer; }
         
-        /* 頁籤切換 */
-        .tabs { display: flex; margin-bottom: 10px; border-bottom: 1px solid #444; }
-        .tab {
-            padding: 8px 15px;
-            cursor: pointer;
-            color: var(--secondary-text);
-            border-bottom: 2px solid transparent;
-        }
-        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .tabs { display: flex; margin-bottom: 10px; border-bottom: 1px solid #333; }
+        .tab { padding: 6px 12px; cursor: pointer; color: #666; font-size: 0.85rem; border-bottom: 2px solid transparent; }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
 
-        /* 輸入區 */
-        .input-group { margin-bottom: 10px; }
-        input[type="text"] {
-            width: 100%;
-            padding: 8px;
-            background: #333;
-            border: none;
-            color: white;
-            border-radius: 5px;
-            box-sizing: border-box; 
-        }
+        input[type="text"] { width: 100%; padding: 8px; background: #2a2a2a; border: none; color: white; border-radius: 4px; box-sizing: border-box; }
         
-        /* 隱藏 YouTube iframe */
-        #youtube-player { display: none; }
-        
-        /* 音量滑桿 */
-        .volume-control { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--secondary-text); }
-        input[type="range"] { flex: 1; accent-color: var(--accent); }
-
         .hidden { display: none; }
+        input[type="range"] { width: 100%; accent-color: var(--primary); height: 4px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>FocusFlow</h2>
-    
-    <div class="presets" id="presetContainer">
-        </div>
+<div class="dashboard">
+    <div class="status-bar" id="dateTime">Loading date...</div>
 
-    <div class="timer-display" id="timeDisplay">25:00</div>
+    <div class="task-input-group">
+        <input type="text" class="task-input" id="taskName" placeholder="✨ 輸入當前專注任務..." oninput="updateTitle()">
+    </div>
+
+    <div class="timer-wrapper">
+        <svg class="timer-svg" viewBox="0 0 250 250">
+            <circle class="circle-bg" cx="125" cy="125" r="120"></circle>
+            <circle class="circle-progress" id="progressRing" cx="125" cy="125" r="120"></circle>
+        </svg>
+        <div class="timer-display" id="timeDisplay">25:00</div>
+    </div>
+    
+    <div class="presets" id="presetContainer"></div>
 
     <div class="controls">
-        <button class="btn-main btn-start" id="startBtn" onclick="toggleTimer()">開始專注</button>
+        <button class="btn-main btn-start" id="startBtn" onclick="toggleTimer()">開始</button>
         <button class="btn-main btn-reset" onclick="resetTimer()">重置</button>
     </div>
 
     <div class="audio-panel">
         <div class="panel-header">
-            <span>🎵 背景音樂</span>
+            <span>🎧 背景音樂</span>
             <div class="switch-group">
-                <input type="checkbox" id="musicToggle" checked>
-                <label for="musicToggle">啟用</label>
+                <input type="checkbox" id="musicToggle" checked> <label for="musicToggle">開啟</label>
             </div>
         </div>
 
@@ -183,19 +210,14 @@
             <div class="tab" onclick="switchTab('local')">本地檔案</div>
         </div>
 
-        <div id="youtubeInput" class="input-group">
-            <input type="text" id="ytUrl" placeholder="貼上 YouTube 連結或 Video ID" value="jnBnhT4UiMc">
-            <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">
-                預設: 綠鋼琴音樂 (可點擊開始直接播放)
-            </div>
+        <div id="youtubeInput">
+            <input type="text" id="ytUrl" placeholder="YouTube URL / ID" value="jfKfPfyJRdk">
         </div>
-
-        <div id="localInput" class="input-group hidden">
+        <div id="localInput" class="hidden">
             <input type="file" id="localFile" accept="audio/*">
             <audio id="localAudioPlayer" loop></audio>
         </div>
-
-        <div class="volume-control">
+        <div style="margin-top:10px; display:flex; gap:10px; color:#666; font-size:0.8rem; align-items:center;">
             <span>音量</span>
             <input type="range" id="volumeSlider" min="0" max="100" value="50">
         </div>
@@ -205,125 +227,155 @@
 <div id="player"></div>
 
 <script>
-    // --- 1. 應用程式狀態 ---
+    // --- APP 狀態 ---
     let state = {
         timeLeft: 25 * 60,
         initialTime: 25 * 60,
         isRunning: false,
         timerId: null,
         currentPresetIndex: 0,
-        musicSource: 'youtube', // 'youtube' or 'local'
+        musicSource: 'youtube', 
         isMusicEnabled: true,
         presets: [
-            { label: "番茄鐘", minutes: 25 },
-            { label: "短休息", minutes: 5 },
-            { label: "長休息", minutes: 15 },
-            { label: "深度工作", minutes: 50 },
-            { label: "衝刺", minutes: 10 }
+            { label: "番茄鐘", minutes: 25, type: 'work' },
+            { label: "短休息", minutes: 5, type: 'break' },
+            { label: "長休息", minutes: 15, type: 'break' },
+            { label: "深度工作", minutes: 50, type: 'work' },
+            { label: "收尾", minutes: 10, type: 'work' }
         ]
     };
 
-    // --- 2. 初始化與預設按鈕邏輯 ---
+    // --- 初始化 ---
     function init() {
         renderPresets();
         updateDisplay();
+        startClock(); // 啟動時鐘
         
-        // 監聽音量改變
-        document.getElementById('volumeSlider').addEventListener('input', (e) => {
-            setVolume(e.target.value);
-        });
-
-        // 監聽音樂開關
+        // 音樂與音量監聽
+        document.getElementById('volumeSlider').addEventListener('input', (e) => setVolume(e.target.value));
         document.getElementById('musicToggle').addEventListener('change', (e) => {
             state.isMusicEnabled = e.target.checked;
             if (!state.isMusicEnabled) pauseAudio();
-            else if (state.isRunning) playAudio();
+            else if (state.isRunning) loadAndPlayAudio();
         });
+
+        // 請求通知權限 (當使用者第一次互動時也會再次請求)
+        if ("Notification" in window && Notification.permission !== "granted") {
+            // 靜默檢查，不直接彈窗，等到按按鈕再彈
+        }
     }
 
+    // --- 1. 日期時間功能 ---
+    function startClock() {
+        function updateTime() {
+            const now = new Date();
+            // 格式：2023/10/27 週五 14:30:05
+            const dateStr = now.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' });
+            const timeStr = now.toLocaleTimeString('zh-TW', { hour12: false });
+            document.getElementById('dateTime').innerText = `${dateStr} • ${timeStr}`;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+    }
+
+    // --- 4. 任務標題更新 ---
+    function updateTitle() {
+        const m = Math.floor(state.timeLeft / 60);
+        const s = state.timeLeft % 60;
+        const timeStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        const task = document.getElementById('taskName').value;
+        const label = task ? task : "FocusFlow";
+        
+        // 如果正在跑，顯示時間；沒跑則顯示 FocusFlow
+        document.title = state.isRunning ? `(${timeStr}) ${label}` : `${label} - 準備中`;
+    }
+
+    // --- 渲染與操作 ---
     function renderPresets() {
         const container = document.getElementById('presetContainer');
         container.innerHTML = '';
         state.presets.forEach((preset, index) => {
             const btn = document.createElement('div');
             btn.className = `preset-btn ${index === state.currentPresetIndex ? 'active' : ''}`;
-            btn.innerHTML = `${preset.label}<br><span class="edit-hint">${preset.minutes}m (編輯)</span>`;
-            
-            // 左鍵點擊：選擇
+            btn.innerText = preset.label;
             btn.onclick = () => selectPreset(index);
-            
-            // 右鍵點擊：編輯 (在手機上可用長按模擬，這裡簡單用 ContextMenu 示範)
-            btn.oncontextmenu = (e) => {
-                e.preventDefault();
-                editPreset(index);
-            };
-
+            btn.oncontextmenu = (e) => { e.preventDefault(); editPreset(index); };
             container.appendChild(btn);
         });
     }
 
     function selectPreset(index) {
-        if (state.isRunning) return; // 執行中不可切換
+        if (state.isRunning) return;
         state.currentPresetIndex = index;
-        state.initialTime = state.presets[index].minutes * 60;
+        const p = state.presets[index];
+        state.initialTime = p.minutes * 60;
         state.timeLeft = state.initialTime;
+        
+        // 變色邏輯：休息變綠色，工作變紅色
+        const color = p.type === 'break' ? '#4ecdc4' : '#ff6b6b';
+        document.documentElement.style.setProperty('--primary', color);
+        
         renderPresets();
         updateDisplay();
+        updateRing();
     }
 
     function editPreset(index) {
         const p = state.presets[index];
-        const newLabel = prompt("輸入新的標籤名稱:", p.label);
-        const newTime = prompt("輸入新的分鐘數:", p.minutes);
-
-        if (newLabel && newTime && !isNaN(newTime)) {
-            state.presets[index] = { label: newLabel, minutes: parseInt(newTime) };
-            // 如果當前選中的是被編輯的，即時更新
-            if (state.currentPresetIndex === index) {
-                selectPreset(index);
-            } else {
-                renderPresets();
-            }
+        const label = prompt("名稱", p.label);
+        const min = prompt("分鐘", p.minutes);
+        if (label && min && !isNaN(min)) {
+            state.presets[index].label = label;
+            state.presets[index].minutes = parseInt(min);
+            if (state.currentPresetIndex === index) selectPreset(index);
+            else renderPresets();
         }
     }
 
-    // --- 3. 計時器邏輯 ---
+    // --- 2. 計時器與 SVG 進度條 ---
     function updateDisplay() {
         const m = Math.floor(state.timeLeft / 60);
         const s = state.timeLeft % 60;
         document.getElementById('timeDisplay').innerText = 
             `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-        document.title = `(${m}:${s}) FocusFlow`;
+        updateTitle();
+    }
+
+    function updateRing() {
+        // 圓周長 = 2 * PI * 120 ≈ 754
+        const circle = document.getElementById('progressRing');
+        const total = 754;
+        const offset = total - (state.timeLeft / state.initialTime) * total;
+        circle.style.strokeDashoffset = offset;
     }
 
     function toggleTimer() {
         const btn = document.getElementById('startBtn');
         
+        // 3. 嘗試請求通知權限
+        if (Notification.permission === "default") Notification.requestPermission();
+
         if (state.isRunning) {
-            // 暫停
             clearInterval(state.timerId);
             state.isRunning = false;
             btn.innerText = "繼續";
-            btn.style.backgroundColor = "#4ecdc4"; // 變色
-            pauseAudioWithFade(); // 漸出暫停
+            btn.style.opacity = "0.7";
+            pauseAudioWithFade();
         } else {
-            // 開始
-            if (state.timeLeft === 0) return; // 已結束
+            if (state.timeLeft <= 0) return;
             state.isRunning = true;
             btn.innerText = "暫停";
-            btn.style.backgroundColor = "#ff6b6b";
-            
-            loadAndPlayAudio(); // 播放音樂
+            btn.style.opacity = "1";
+            loadAndPlayAudio();
             
             state.timerId = setInterval(() => {
                 state.timeLeft--;
                 updateDisplay();
-                
-                if (state.timeLeft <= 0) {
-                    timerFinished();
-                }
+                updateRing();
+                if (state.timeLeft <= 0) timerFinished();
             }, 1000);
         }
+        updateTitle();
     }
 
     function resetTimer() {
@@ -331,68 +383,61 @@
         state.isRunning = false;
         state.timeLeft = state.initialTime;
         updateDisplay();
-        document.getElementById('startBtn').innerText = "開始專注";
-        pauseAudio(); // 直接停止，不需漸出
-        resetAudioPosition(); // 重置音樂到開頭
+        updateRing();
+        document.getElementById('startBtn').innerText = "開始";
+        pauseAudio();
+        resetAudioPosition();
     }
 
     function timerFinished() {
         clearInterval(state.timerId);
         state.isRunning = false;
-        document.getElementById('startBtn').innerText = "開始專注";
-        
-        // 1. 漸出停止音樂
+        document.getElementById('startBtn').innerText = "開始";
         pauseAudioWithFade();
-        
-        // 2. 播放鬧鐘音效 (使用 Oscillator 產生簡單的嗶嗶聲，無需外部檔案)
         playAlarmSound();
-        
-        alert("時間到！專注完成！");
+        sendNotification(); // 發送通知
+        updateTitle();
+        alert("🎉 時間到！該階段結束！");
     }
 
-    // --- 4. 音訊引擎 (YouTube API & Local) ---
-    
-    // YouTube API Setup
-    // --- 修改後的 YouTube API Setup ---
+    // --- 3. 桌面通知功能 ---
+    function sendNotification() {
+        if (Notification.permission === "granted") {
+            const task = document.getElementById('taskName').value || "專注時段";
+            new Notification("⏰ FocusFlow 時間到！", {
+                body: `您剛剛完成了：${task}\n起來走動一下吧！`,
+                icon: "https://cdn-icons-png.flaticon.com/512/3209/3209931.png" // 番茄 icon
+            });
+        }
+    }
+
+    // --- 音訊引擎 (YouTube 修復 + 循環) ---
     var player;
     function onYouTubeIframeAPIReady() {
+        const id = extractVideoID(document.getElementById('ytUrl').value) || 'jfKfPfyJRdk';
         player = new YT.Player('player', {
-            height: '0',
-            width: '0',
-            videoId: document.getElementById('ytUrl').value || 'jnBnhT4UiMc', // 自動抓取輸入框的 ID
-            playerVars: {
-                'playsinline': 1,
-                'controls': 0,
-                'rel': 0,        // 結束不顯示推薦影片
-                'fs': 0          // 禁止全螢幕
-            },
+            height: '0', width: '0', videoId: id,
+            playerVars: { 'playsinline': 1, 'controls': 0, 'rel': 0 },
             events: {
-                'onReady': onPlayerReady,
-                'onStateChange': onPlayerStateChange // ★ 新增這行：監聽狀態改變
+                'onReady': (e) => e.target.setVolume(document.getElementById('volumeSlider').value),
+                'onStateChange': onPlayerStateChange
             }
         });
     }
 
-    // ★ 新增這個函式來控制循環播放
     function onPlayerStateChange(event) {
-        // YT.PlayerState.ENDED 的代碼是 0
-        if (event.data === 0) {
-            player.playVideo(); 
+        if (event.data === 0) { // 結束時強制重播
+            player.seekTo(0);
+            player.playVideo();
         }
     }
-
-    function onPlayerReady(event) {
-        // 設定初始音量
-        event.target.setVolume(document.getElementById('volumeSlider').value);
-    }
-
-    // 載入 YouTube SDK
+    
+    // 載入 YouTube API
     var tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     var firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-    // 切換來源 UI
     function switchTab(source) {
         state.musicSource = source;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -407,49 +452,34 @@
         }
     }
 
-    // 音訊控制核心
     function loadAndPlayAudio() {
         if (!state.isMusicEnabled) return;
-
         const volume = document.getElementById('volumeSlider').value;
 
-        if (state.musicSource === 'youtube') {
-            // 處理 YouTube ID
-            let inputUrl = document.getElementById('ytUrl').value;
-            let videoId = extractVideoID(inputUrl);
-            
-            if (player && videoId) {
-                // 如果是新 ID，載入新影片
-                if (player.getVideoData()['video_id'] !== videoId) {
-                    player.loadVideoById(videoId);
+        try {
+            if (state.musicSource === 'youtube') {
+                if (!player || typeof player.playVideo !== 'function') return;
+                let id = extractVideoID(document.getElementById('ytUrl').value);
+                if (id && player.getVideoData && player.getVideoData()['video_id'] !== id) {
+                    player.loadVideoById(id);
                 }
                 player.setVolume(volume);
                 player.playVideo();
-            }
-        } else {
-            // 處理本地檔案
-            const localPlayer = document.getElementById('localAudioPlayer');
-            const fileInput = document.getElementById('localFile');
-            
-            if (fileInput.files.length > 0) {
-                if (!localPlayer.src || localPlayer.src === "") {
-                    localPlayer.src = URL.createObjectURL(fileInput.files[0]);
+            } else {
+                const lp = document.getElementById('localAudioPlayer');
+                const file = document.getElementById('localFile').files[0];
+                if (file && !lp.src) lp.src = URL.createObjectURL(file);
+                if (file || lp.src) {
+                    lp.volume = 0;
+                    lp.play();
+                    let v = 0, t = volume/100;
+                    let fade = setInterval(() => {
+                        if (v >= t) clearInterval(fade);
+                        else { v+=0.05; lp.volume = Math.min(v,t); }
+                    }, 100);
                 }
-                localPlayer.volume = volume / 100;
-                
-                // 漸入效果 (Fade In)
-                localPlayer.volume = 0;
-                localPlayer.play();
-                let vol = 0;
-                let fadeInterval = setInterval(() => {
-                    if (vol >= volume / 100) clearInterval(fadeInterval);
-                    else {
-                        vol += 0.05;
-                        localPlayer.volume = Math.min(vol, volume/100);
-                    }
-                }, 100);
             }
-        }
+        } catch(e) { console.error(e); }
     }
 
     function pauseAudio() {
@@ -457,108 +487,62 @@
         document.getElementById('localAudioPlayer').pause();
     }
 
-    function resetAudioPosition() {
-        // YouTube API doesn't allow seek unless playing, so we skip for now or seek on next play
-        const localPlayer = document.getElementById('localAudioPlayer');
-        if(!localPlayer.paused) localPlayer.pause();
-        localPlayer.currentTime = 0;
-    }
-
-    // 加分功能：漸出 (Fade Out)
     function pauseAudioWithFade() {
         if (state.musicSource === 'youtube' && player) {
-            let currentVol = player.getVolume();
-            let fadeOut = setInterval(() => {
-                currentVol -= 5;
-                if (currentVol <= 0) {
-                    clearInterval(fadeOut);
-                    player.pauseVideo();
-                    player.setVolume(document.getElementById('volumeSlider').value); // 恢復音量設定供下次使用
-                } else {
-                    player.setVolume(currentVol);
-                }
+            let vol = player.getVolume();
+            let fade = setInterval(() => {
+                vol -= 5;
+                if (vol <= 0) { clearInterval(fade); player.pauseVideo(); player.setVolume(document.getElementById('volumeSlider').value); }
+                else player.setVolume(vol);
             }, 100);
         } else {
-            const localPlayer = document.getElementById('localAudioPlayer');
-            let currentVol = localPlayer.volume;
-            let fadeOut = setInterval(() => {
-                currentVol -= 0.05;
-                if (currentVol <= 0) {
-                    clearInterval(fadeOut);
-                    localPlayer.pause();
-                    localPlayer.volume = document.getElementById('volumeSlider').value / 100;
-                } else {
-                    localPlayer.volume = Math.max(0, currentVol);
-                }
+            const lp = document.getElementById('localAudioPlayer');
+            let vol = lp.volume;
+            let fade = setInterval(() => {
+                vol -= 0.05;
+                if (vol <= 0) { clearInterval(fade); lp.pause(); lp.volume = document.getElementById('volumeSlider').value/100; }
+                else lp.volume = Math.max(0, vol);
             }, 100);
         }
+    }
+
+    function resetAudioPosition() {
+        const lp = document.getElementById('localAudioPlayer');
+        if(!lp.paused) lp.pause();
+        lp.currentTime = 0;
     }
 
     function setVolume(val) {
         if (player && typeof player.setVolume === 'function') player.setVolume(val);
-        const localPlayer = document.getElementById('localAudioPlayer');
-        localPlayer.volume = val / 100;
+        document.getElementById('localAudioPlayer').volume = val / 100;
     }
 
-    // 工具：提取 YouTube ID
     function extractVideoID(url) {
-        var regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-        var match = url.match(regExp);
-        return (match && match[7].length == 11) ? match[7] : url; // 如果本身就是 ID 則回傳，否則嘗試解析
+        if (!url) return null;
+        var match = url.match(/^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/);
+        return (match && match[7].length == 11) ? match[7] : url;
     }
 
- // 工具：產生鬧鐘嗶嗶聲 (升級版：連續短音)
+    // 連環鬧鐘
     function playAlarmSound() {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
-        
         const ctx = new AudioContext();
         const now = ctx.currentTime;
-
-        // 定義一個發出單次「嗶」聲的函式
-        function beep(time, freq) {
+        function beep(t) {
             const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-
-            osc.type = 'sine'; // 波形，sine 比較柔和，square 會很刺耳
-            osc.frequency.setValueAtTime(freq, time); // 頻率 (Hz)
-            
-            // 音量包絡線 (Fade out)
-            gain.gain.setValueAtTime(0.3, time);
-            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
-
-            osc.start(time);
-            osc.stop(time + 0.15); // 每個音持續 0.15 秒
+            const g = ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc.frequency.value = 880;
+            g.gain.setValueAtTime(0.3, t);
+            g.gain.exponentialRampToValueAtTime(0.01, t+0.15);
+            osc.start(t); osc.stop(t+0.15);
         }
-
-        // --- 排程播放節奏 ---
-        
-        // 第一組：嗶嗶嗶
-        beep(now + 0.0, 440); // 第 0 秒
-        beep(now + 0.2, 440); // 第 0.2 秒
-        beep(now + 0.4, 440); // 第 0.4 秒
-
-        // 第二組：嗶嗶嗶 (延遲 1 秒後再次播放)
-        beep(now + 1.2, 440);
-        beep(now + 1.4, 440);
-        beep(now + 1.6, 440);
-        
-        // 第三組：嗶嗶嗶 (延遲 2.4 秒後再次播放，怕沒聽到)
-        beep(now + 2.4, 440);
-        beep(now + 2.6, 440);
-        beep(now + 2.8, 880);
+        [0,0.2,0.4, 1.2,1.4,1.6, 2.4,2.6,2.8].forEach(dt => beep(now+dt));
     }
-    
-   
 
-    // 啟動
     init();
-
 </script>
-
 </body>
 </html>
 
