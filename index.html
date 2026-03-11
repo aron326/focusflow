@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FocusFlow v4.0</title>
+    <title>FocusFlow v4.1</title>
     <style>
         :root {
             --bg-color: #121212;
@@ -57,7 +57,9 @@
         .btn-apply {
             background: var(--primary); color: white; border: none; padding: 10px 15px;
             border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem;
+            transition: 0.2s;
         }
+        .btn-apply:active { transform: scale(0.95); }
 
         /* 視覺化圓環 */
         .timer-wrapper {
@@ -77,17 +79,33 @@
         /* 時間文字 */
         .timer-display { z-index: 10; font-size: 4.5rem; font-weight: 700; font-variant-numeric: tabular-nums; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
 
-        /* 預設按鈕 (含編輯圖示) */
-        .presets { display: flex; justify-content: center; gap: 8px; margin-bottom: 25px; flex-wrap: wrap; }
-        .preset-btn {
-            background: #2c2c2c; border: 1px solid #333; color: #ccc; border-radius: 8px;
-            display: flex; align-items: center; overflow: hidden; transition: 0.2s;
+        /* 🌟 新版：預設按鈕 (2x2 網格版面) */
+        .presets { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); /* 切割成左右均等的兩欄 */
+            gap: 12px; /* 按鈕之間的十字間距 */
+            margin-bottom: 25px; 
+            width: 100%; 
         }
-        .preset-btn.active { background: var(--text); color: var(--bg-color); font-weight: bold; }
-        .preset-name { padding: 8px 10px; cursor: pointer; font-size: 0.85rem; }
+        .preset-btn {
+            background: #2c2c2c; border: 1px solid #333; color: #ccc; border-radius: 10px;
+            display: flex; align-items: stretch; /* 讓內部元素等高 */
+            overflow: hidden; transition: 0.2s;
+        }
+        .preset-btn:hover { border-color: #666; }
+        .preset-btn.active { background: var(--text); color: var(--bg-color); font-weight: bold; border-color: var(--text); }
+        
+        /* 名稱與時間置中顯示 */
+        .preset-name { 
+            padding: 12px 10px; cursor: pointer; font-size: 0.95rem; flex: 1; 
+            display: flex; align-items: center; justify-content: center;
+        }
+        /* 編輯小圖示固定在右側 */
         .preset-edit {
-            padding: 8px 8px; background: rgba(0,0,0,0.2); cursor: pointer; font-size: 0.8rem;
-            border-left: 1px solid rgba(255,255,255,0.1); opacity: 0.7;
+            padding: 0 12px; background: rgba(0,0,0,0.2); cursor: pointer; font-size: 0.85rem;
+            border-left: 1px solid rgba(255,255,255,0.1); opacity: 0.6;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.2s;
         }
         .preset-edit:hover { opacity: 1; background: rgba(255,255,255,0.2); }
 
@@ -170,7 +188,7 @@
         initialTime: 25 * 60,
         isRunning: false,
         timerId: null,
-        currentPresetIndex: 0, // -1 代表使用自訂時間
+        currentPresetIndex: 0,
         musicSource: 'youtube', 
         isMusicEnabled: true,
         presets: [
@@ -192,7 +210,7 @@
             if (!state.isMusicEnabled) pauseAudio();
             else if (state.isRunning) loadAndPlayAudio();
         });
-        if ("Notification" in window && Notification.permission !== "granted") {} // 靜默檢查
+        if ("Notification" in window && Notification.permission !== "granted") {} 
     }
 
     function startClock() {
@@ -215,19 +233,17 @@
         document.title = state.isRunning ? `(${timeStr}) ${label}` : `${label} - 準備中`;
     }
 
-    // 🌟 新增：套用自訂時間
     function applyCustomTime() {
         const minInput = document.getElementById('customMin').value;
         const min = parseInt(minInput);
         
         if (min && min > 0) {
-            if (state.isRunning) toggleTimer(); // 如果正在跑，先暫停
+            if (state.isRunning) toggleTimer(); 
             
             state.initialTime = min * 60;
             state.timeLeft = state.initialTime;
-            state.currentPresetIndex = -1; // 取消所有預設按鈕的選中狀態
+            state.currentPresetIndex = -1; 
             
-            // 自訂時間預設為工作模式（紅色）
             document.documentElement.style.setProperty('--primary', '#ff6b6b');
             
             renderPresets();
@@ -238,7 +254,6 @@
         }
     }
 
-    // 🌟 修改：渲染帶有編輯圖示的預設按鈕
     function renderPresets() {
         const container = document.getElementById('presetContainer');
         container.innerHTML = '';
@@ -246,19 +261,17 @@
             const btnWrapper = document.createElement('div');
             btnWrapper.className = `preset-btn ${index === state.currentPresetIndex ? 'active' : ''}`;
             
-            // 左側：選擇名稱與時間
             const nameSpan = document.createElement('div');
             nameSpan.className = 'preset-name';
             nameSpan.innerText = `${preset.label} (${preset.minutes}m)`;
             nameSpan.onclick = () => selectPreset(index);
             
-            // 右側：編輯按鈕
             const editSpan = document.createElement('div');
             editSpan.className = 'preset-edit';
             editSpan.innerHTML = '✏️';
             editSpan.title = "編輯此預設";
             editSpan.onclick = (e) => {
-                e.stopPropagation(); // 防止觸發到外層的選擇事件
+                e.stopPropagation(); 
                 editPreset(index);
             };
 
@@ -275,7 +288,6 @@
         state.initialTime = p.minutes * 60;
         state.timeLeft = state.initialTime;
         
-        // 清空自訂時間輸入框，避免混淆
         document.getElementById('customMin').value = '';
         
         const color = p.type === 'break' ? '#4ecdc4' : '#ff6b6b';
@@ -286,7 +298,6 @@
         updateRing();
     }
 
-    // 🌟 修改：編輯預設邏輯
     function editPreset(index) {
         if (state.isRunning) {
             alert("計時中無法修改預設時間，請先暫停！");
@@ -294,7 +305,7 @@
         }
         const p = state.presets[index];
         const label = prompt("請輸入新的標籤名稱：", p.label);
-        if (label === null) return; // 按下取消
+        if (label === null) return; 
         
         const min = prompt(`請輸入「${label}」的分鐘數：`, p.minutes);
         if (min === null) return; 
@@ -309,7 +320,6 @@
         }
     }
 
-    // --- 計時器與 UI 更新 ---
     function updateDisplay() {
         const m = Math.floor(state.timeLeft / 60);
         const s = state.timeLeft % 60;
@@ -384,7 +394,7 @@
         }
     }
 
-    // --- 音訊引擎 ---
+    // 音訊引擎
     var player;
     function onYouTubeIframeAPIReady() {
         const id = extractVideoID(document.getElementById('ytUrl').value) || 'jfKfPfyJRdk';
