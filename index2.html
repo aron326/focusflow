@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FocusFlow v4.0</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --primary: #ff6b6b;  
+            --break: #4ecdc4;    
+            --text: #ffffff;
+            --sub-text: #888888;
+            --ring-bg: #2a2a2a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .dashboard {
+            background-color: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            width: 90%;
+            max-width: 480px;
+            text-align: center;
+            position: relative;
+        }
+
+        /* 頂部日期時間 */
+        .status-bar {
+            font-size: 0.9rem; color: var(--sub-text); margin-bottom: 20px; font-weight: 500; letter-spacing: 1px;
+        }
+
+        /* 任務與自訂時間輸入區 */
+        .custom-setup-group {
+            display: flex; gap: 10px; margin-bottom: 25px; align-items: center; justify-content: center;
+        }
+        .custom-input {
+            background: rgba(255,255,255,0.05); border: 1px solid #333; color: var(--text);
+            padding: 10px; border-radius: 8px; outline: none; transition: 0.3s;
+        }
+        .custom-input:focus { border-color: var(--primary); background: rgba(255,255,255,0.1); }
+        .input-task { flex: 2; font-size: 1.1rem; }
+        .input-time { flex: 1; font-size: 1.1rem; text-align: center; max-width: 80px; }
+        .btn-apply {
+            background: var(--primary); color: white; border: none; padding: 10px 15px;
+            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem;
+        }
+
+        /* 視覺化圓環 */
+        .timer-wrapper {
+            position: relative; width: 260px; height: 260px; margin: 0 auto 25px auto;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .timer-svg {
+            transform: rotate(-90deg); width: 100%; height: 100%; position: absolute; top: 0; left: 0;
+        }
+        .circle-bg { fill: none; stroke: var(--ring-bg); stroke-width: 8; }
+        .circle-progress {
+            fill: none; stroke: var(--primary); stroke-width: 8; stroke-linecap: round;
+            stroke-dasharray: 754; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear, stroke 0.3s;
+            filter: drop-shadow(0 0 4px var(--primary));
+        }
+
+        /* 時間文字 */
+        .timer-display { z-index: 10; font-size: 4.5rem; font-weight: 700; font-variant-numeric: tabular-nums; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+
+        /* 預設按鈕 (含編輯圖示) */
+        .presets { display: flex; justify-content: center; gap: 8px; margin-bottom: 25px; flex-wrap: wrap; }
+        .preset-btn {
+            background: #2c2c2c; border: 1px solid #333; color: #ccc; border-radius: 8px;
+            display: flex; align-items: center; overflow: hidden; transition: 0.2s;
+        }
+        .preset-btn.active { background: var(--text); color: var(--bg-color); font-weight: bold; }
+        .preset-name { padding: 8px 10px; cursor: pointer; font-size: 0.85rem; }
+        .preset-edit {
+            padding: 8px 8px; background: rgba(0,0,0,0.2); cursor: pointer; font-size: 0.8rem;
+            border-left: 1px solid rgba(255,255,255,0.1); opacity: 0.7;
+        }
+        .preset-edit:hover { opacity: 1; background: rgba(255,255,255,0.2); }
+
+        /* 控制按鈕 */
+        .controls { display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; }
+        .btn-main { padding: 12px 40px; font-size: 1.1rem; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; transition: transform 0.1s; }
+        .btn-start { background-color: var(--primary); color: white; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4); }
+        .btn-reset { background-color: transparent; border: 2px solid #444; color: #888; }
+        .btn-main:active { transform: scale(0.96); }
+
+        /* 音樂面板 */
+        .audio-panel { background: #181818; padding: 15px; border-radius: 12px; text-align: left; border: 1px solid #333; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.9rem; color: #aaa; }
+        .switch-group { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .tabs { display: flex; margin-bottom: 10px; border-bottom: 1px solid #333; }
+        .tab { padding: 6px 12px; cursor: pointer; color: #666; font-size: 0.85rem; border-bottom: 2px solid transparent; }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        input[type="text"].yt-input { width: 100%; padding: 8px; background: #2a2a2a; border: none; color: white; border-radius: 4px; box-sizing: border-box; }
+        .hidden { display: none; }
+        input[type="range"] { width: 100%; accent-color: var(--primary); height: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="status-bar" id="dateTime">Loading date...</div>
+
+    <div class="custom-setup-group">
+        <input type="text" class="custom-input input-task" id="taskName" placeholder="✨ 專注任務..." oninput="updateTitle()">
+        <input type="number" class="custom-input input-time" id="customMin" placeholder="分鐘" min="1">
+        <button class="btn-apply" onclick="applyCustomTime()">設定</button>
+    </div>
+
+    <div class="timer-wrapper">
+        <svg class="timer-svg" viewBox="0 0 250 250">
+            <circle class="circle-bg" cx="125" cy="125" r="120"></circle>
+            <circle class="circle-progress" id="progressRing" cx="125" cy="125" r="120"></circle>
+        </svg>
+        <div class="timer-display" id="timeDisplay">25:00</div>
+    </div>
+    
+    <div class="presets" id="presetContainer"></div>
+
+    <div class="controls">
+        <button class="btn-main btn-start" id="startBtn" onclick="toggleTimer()">開始</button>
+        <button class="btn-main btn-reset" onclick="resetTimer()">重置</button>
+    </div>
+
+    <div class="audio-panel">
+        <div class="panel-header">
+            <span>🎧 背景音樂</span>
+            <div class="switch-group">
+                <input type="checkbox" id="musicToggle" checked> <label for="musicToggle">開啟</label>
+            </div>
+        </div>
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('youtube')">YouTube</div>
+            <div class="tab" onclick="switchTab('local')">本地檔案</div>
+        </div>
+        <div id="youtubeInput">
+            <input type="text" id="ytUrl" class="yt-input" placeholder="YouTube URL / ID" value="jfKfPfyJRdk">
+        </div>
+        <div id="localInput" class="hidden">
+            <input type="file" id="localFile" accept="audio/*">
+            <audio id="localAudioPlayer" loop></audio>
+        </div>
+        <div style="margin-top:10px; display:flex; gap:10px; color:#666; font-size:0.8rem; align-items:center;">
+            <span>音量</span>
+            <input type="range" id="volumeSlider" min="0" max="100" value="50">
+        </div>
+    </div>
+</div>
+
+<div id="player"></div>
+
+<script>
+    // --- APP 狀態 ---
+    let state = {
+        timeLeft: 25 * 60,
+        initialTime: 25 * 60,
+        isRunning: false,
+        timerId: null,
+        currentPresetIndex: 0, // -1 代表使用自訂時間
+        musicSource: 'youtube', 
+        isMusicEnabled: true,
+        presets: [
+            { label: "番茄鐘", minutes: 25, type: 'work' },
+            { label: "短休", minutes: 5, type: 'break' },
+            { label: "長休", minutes: 15, type: 'break' },
+            { label: "深度", minutes: 50, type: 'work' }
+        ]
+    };
+
+    function init() {
+        renderPresets();
+        updateDisplay();
+        startClock();
+        
+        document.getElementById('volumeSlider').addEventListener('input', (e) => setVolume(e.target.value));
+        document.getElementById('musicToggle').addEventListener('change', (e) => {
+            state.isMusicEnabled = e.target.checked;
+            if (!state.isMusicEnabled) pauseAudio();
+            else if (state.isRunning) loadAndPlayAudio();
+        });
+        if ("Notification" in window && Notification.permission !== "granted") {} // 靜默檢查
+    }
+
+    function startClock() {
+        function updateTime() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' });
+            const timeStr = now.toLocaleTimeString('zh-TW', { hour12: false });
+            document.getElementById('dateTime').innerText = `${dateStr} • ${timeStr}`;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+    }
+
+    function updateTitle() {
+        const m = Math.floor(state.timeLeft / 60);
+        const s = state.timeLeft % 60;
+        const timeStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        const task = document.getElementById('taskName').value;
+        const label = task ? task : "FocusFlow";
+        document.title = state.isRunning ? `(${timeStr}) ${label}` : `${label} - 準備中`;
+    }
+
+    // 🌟 新增：套用自訂時間
+    function applyCustomTime() {
+        const minInput = document.getElementById('customMin').value;
+        const min = parseInt(minInput);
+        
+        if (min && min > 0) {
+            if (state.isRunning) toggleTimer(); // 如果正在跑，先暫停
+            
+            state.initialTime = min * 60;
+            state.timeLeft = state.initialTime;
+            state.currentPresetIndex = -1; // 取消所有預設按鈕的選中狀態
+            
+            // 自訂時間預設為工作模式（紅色）
+            document.documentElement.style.setProperty('--primary', '#ff6b6b');
+            
+            renderPresets();
+            updateDisplay();
+            updateRing();
+        } else {
+            alert("請輸入有效的時間（分鐘）！");
+        }
+    }
+
+    // 🌟 修改：渲染帶有編輯圖示的預設按鈕
+    function renderPresets() {
+        const container = document.getElementById('presetContainer');
+        container.innerHTML = '';
+        state.presets.forEach((preset, index) => {
+            const btnWrapper = document.createElement('div');
+            btnWrapper.className = `preset-btn ${index === state.currentPresetIndex ? 'active' : ''}`;
+            
+            // 左側：選擇名稱與時間
+            const nameSpan = document.createElement('div');
+            nameSpan.className = 'preset-name';
+            nameSpan.innerText = `${preset.label} (${preset.minutes}m)`;
+            nameSpan.onclick = () => selectPreset(index);
+            
+            // 右側：編輯按鈕
+            const editSpan = document.createElement('div');
+            editSpan.className = 'preset-edit';
+            editSpan.innerHTML = '✏️';
+            editSpan.title = "編輯此預設";
+            editSpan.onclick = (e) => {
+                e.stopPropagation(); // 防止觸發到外層的選擇事件
+                editPreset(index);
+            };
+
+            btnWrapper.appendChild(nameSpan);
+            btnWrapper.appendChild(editSpan);
+            container.appendChild(btnWrapper);
+        });
+    }
+
+    function selectPreset(index) {
+        if (state.isRunning) return;
+        state.currentPresetIndex = index;
+        const p = state.presets[index];
+        state.initialTime = p.minutes * 60;
+        state.timeLeft = state.initialTime;
+        
+        // 清空自訂時間輸入框，避免混淆
+        document.getElementById('customMin').value = '';
+        
+        const color = p.type === 'break' ? '#4ecdc4' : '#ff6b6b';
+        document.documentElement.style.setProperty('--primary', color);
+        
+        renderPresets();
+        updateDisplay();
+        updateRing();
+    }
+
+    // 🌟 修改：編輯預設邏輯
+    function editPreset(index) {
+        if (state.isRunning) {
+            alert("計時中無法修改預設時間，請先暫停！");
+            return;
+        }
+        const p = state.presets[index];
+        const label = prompt("請輸入新的標籤名稱：", p.label);
+        if (label === null) return; // 按下取消
+        
+        const min = prompt(`請輸入「${label}」的分鐘數：`, p.minutes);
+        if (min === null) return; 
+
+        if (label.trim() !== '' && min && !isNaN(min) && parseInt(min) > 0) {
+            state.presets[index].label = label;
+            state.presets[index].minutes = parseInt(min);
+            if (state.currentPresetIndex === index) selectPreset(index);
+            else renderPresets();
+        } else {
+            alert("輸入無效，請確保名稱不為空且時間為大於 0 的數字。");
+        }
+    }
+
+    // --- 計時器與 UI 更新 ---
+    function updateDisplay() {
+        const m = Math.floor(state.timeLeft / 60);
+        const s = state.timeLeft % 60;
+        document.getElementById('timeDisplay').innerText = 
+            `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        updateTitle();
+    }
+
+    function updateRing() {
+        const circle = document.getElementById('progressRing');
+        const total = 754;
+        const offset = total - (state.timeLeft / state.initialTime) * total;
+        circle.style.strokeDashoffset = offset;
+    }
+
+    function toggleTimer() {
+        const btn = document.getElementById('startBtn');
+        if (Notification.permission === "default") Notification.requestPermission();
+
+        if (state.isRunning) {
+            clearInterval(state.timerId);
+            state.isRunning = false;
+            btn.innerText = "繼續";
+            btn.style.opacity = "0.7";
+            pauseAudioWithFade();
+        } else {
+            if (state.timeLeft <= 0) return;
+            state.isRunning = true;
+            btn.innerText = "暫停";
+            btn.style.opacity = "1";
+            loadAndPlayAudio();
+            
+            state.timerId = setInterval(() => {
+                state.timeLeft--;
+                updateDisplay();
+                updateRing();
+                if (state.timeLeft <= 0) timerFinished();
+            }, 1000);
+        }
+        updateTitle();
+    }
+
+    function resetTimer() {
+        clearInterval(state.timerId);
+        state.isRunning = false;
+        state.timeLeft = state.initialTime;
+        updateDisplay();
+        updateRing();
+        document.getElementById('startBtn').innerText = "開始";
+        pauseAudio();
+        resetAudioPosition();
+    }
+
+    function timerFinished() {
+        clearInterval(state.timerId);
+        state.isRunning = false;
+        document.getElementById('startBtn').innerText = "開始";
+        pauseAudioWithFade();
+        playAlarmSound();
+        sendNotification();
+        updateTitle();
+        alert("🎉 時間到！階段完成！");
+    }
+
+    function sendNotification() {
+        if (Notification.permission === "granted") {
+            const task = document.getElementById('taskName').value || "專注時段";
+            new Notification("⏰ FocusFlow 時間到！", {
+                body: `您剛剛完成了：${task}\n起來走動一下吧！`,
+                icon: "https://cdn-icons-png.flaticon.com/512/3209/3209931.png"
+            });
+        }
+    }
+
+    // --- 音訊引擎 ---
+    var player;
+    function onYouTubeIframeAPIReady() {
+        const id = extractVideoID(document.getElementById('ytUrl').value) || 'jfKfPfyJRdk';
+        player = new YT.Player('player', {
+            height: '0', width: '0', videoId: id,
+            playerVars: { 'playsinline': 1, 'controls': 0, 'rel': 0 },
+            events: {
+                'onReady': (e) => e.target.setVolume(document.getElementById('volumeSlider').value),
+                'onStateChange': onPlayerStateChange
+            }
+        });
+    }
+
+    function onPlayerStateChange(event) {
+        if (event.data === 0) { player.seekTo(0); player.playVideo(); }
+    }
+    
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    function switchTab(source) {
+        state.musicSource = source;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        if (source === 'youtube') {
+            document.querySelectorAll('.tab')[0].classList.add('active');
+            document.getElementById('youtubeInput').classList.remove('hidden');
+            document.getElementById('localInput').classList.add('hidden');
+        } else {
+            document.querySelectorAll('.tab')[1].classList.add('active');
+            document.getElementById('youtubeInput').classList.add('hidden');
+            document.getElementById('localInput').classList.remove('hidden');
+        }
+    }
+
+    function loadAndPlayAudio() {
+        if (!state.isMusicEnabled) return;
+        const volume = document.getElementById('volumeSlider').value;
+        try {
+            if (state.musicSource === 'youtube') {
+                if (!player || typeof player.playVideo !== 'function') return;
+                let id = extractVideoID(document.getElementById('ytUrl').value);
+                if (id && player.getVideoData && player.getVideoData()['video_id'] !== id) {
+                    player.loadVideoById(id);
+                }
+                player.setVolume(volume);
+                player.playVideo();
+            } else {
+                const lp = document.getElementById('localAudioPlayer');
+                const file = document.getElementById('localFile').files[0];
+                if (file && !lp.src) lp.src = URL.createObjectURL(file);
+                if (file || lp.src) {
+                    lp.volume = 0; lp.play();
+                    let v = 0, t = volume/100;
+                    let fade = setInterval(() => {
+                        if (v >= t) clearInterval(fade); else { v+=0.05; lp.volume = Math.min(v,t); }
+                    }, 100);
+                }
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    function pauseAudio() {
+        if (player && typeof player.pauseVideo === 'function') player.pauseVideo();
+        document.getElementById('localAudioPlayer').pause();
+    }
+
+    function pauseAudioWithFade() {
+        if (state.musicSource === 'youtube' && player) {
+            let vol = player.getVolume();
+            let fade = setInterval(() => {
+                vol -= 5;
+                if (vol <= 0) { clearInterval(fade); player.pauseVideo(); player.setVolume(document.getElementById('volumeSlider').value); }
+                else player.setVolume(vol);
+            }, 100);
+        } else {
+            const lp = document.getElementById('localAudioPlayer');
+            let vol = lp.volume;
+            let fade = setInterval(() => {
+                vol -= 0.05;
+                if (vol <= 0) { clearInterval(fade); lp.pause(); lp.volume = document.getElementById('volumeSlider').value/100; }
+                else lp.volume = Math.max(0, vol);
+            }, 100);
+        }
+    }
+
+    function resetAudioPosition() {
+        const lp = document.getElementById('localAudioPlayer');
+        if(!lp.paused) lp.pause();
+        lp.currentTime = 0;
+    }
+
+    function setVolume(val) {
+        if (player && typeof player.setVolume === 'function') player.setVolume(val);
+        document.getElementById('localAudioPlayer').volume = val / 100;
+    }
+
+    function extractVideoID(url) {
+        if (!url) return null;
+        var match = url.match(/^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/);
+        return (match && match[7].length == 11) ? match[7] : url;
+    }
+
+    function playAlarmSound() {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const now = ctx.currentTime;
+        function beep(t) {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc.frequency.value = 880;
+            g.gain.setValueAtTime(0.3, t);
+            g.gain.exponentialRampToValueAtTime(0.01, t+0.15);
+            osc.start(t); osc.stop(t+0.15);
+        }
+        [0,0.2,0.4, 1.2,1.4,1.6, 2.4,2.6,2.8].forEach(dt => beep(now+dt));
+    }
+
+    init();
+</script>
+</body>
+</html>
