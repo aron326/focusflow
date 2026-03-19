@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FocusFlow v4.1</title>
+    <title>FocusFlow v5.0</title>
     <style>
         :root {
             --bg-color: #121212;
@@ -19,34 +19,19 @@
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; margin: 0; overflow: hidden;
         }
 
         .dashboard {
-            background-color: var(--card-bg);
-            padding: 2.5rem;
-            border-radius: 24px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-            width: 90%;
-            max-width: 480px;
-            text-align: center;
-            position: relative;
+            background-color: var(--card-bg); padding: 2.5rem; border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6); width: 90%; max-width: 480px;
+            text-align: center; position: relative; z-index: 10;
         }
 
-        /* 頂部日期時間 */
-        .status-bar {
-            font-size: 0.9rem; color: var(--sub-text); margin-bottom: 20px; font-weight: 500; letter-spacing: 1px;
-        }
+        .status-bar { font-size: 0.9rem; color: var(--sub-text); margin-bottom: 20px; font-weight: 500; letter-spacing: 1px; }
 
-        /* 任務與自訂時間輸入區 */
-        .custom-setup-group {
-            display: flex; gap: 10px; margin-bottom: 25px; align-items: center; justify-content: center;
-        }
+        .custom-setup-group { display: flex; gap: 10px; margin-bottom: 25px; align-items: center; justify-content: center; }
         .custom-input {
             background: rgba(255,255,255,0.05); border: 1px solid #333; color: var(--text);
             padding: 10px; border-radius: 8px; outline: none; transition: 0.3s;
@@ -56,19 +41,15 @@
         .input-time { flex: 1; font-size: 1.1rem; text-align: center; max-width: 80px; }
         .btn-apply {
             background: var(--primary); color: white; border: none; padding: 10px 15px;
-            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem;
-            transition: 0.2s;
+            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.2s;
         }
         .btn-apply:active { transform: scale(0.95); }
 
-        /* 視覺化圓環 */
         .timer-wrapper {
             position: relative; width: 260px; height: 260px; margin: 0 auto 25px auto;
             display: flex; align-items: center; justify-content: center;
         }
-        .timer-svg {
-            transform: rotate(-90deg); width: 100%; height: 100%; position: absolute; top: 0; left: 0;
-        }
+        .timer-svg { transform: rotate(-90deg); width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
         .circle-bg { fill: none; stroke: var(--ring-bg); stroke-width: 8; }
         .circle-progress {
             fill: none; stroke: var(--primary); stroke-width: 8; stroke-linecap: round;
@@ -76,56 +57,76 @@
             filter: drop-shadow(0 0 4px var(--primary));
         }
 
-        /* 時間文字 */
         .timer-display { z-index: 10; font-size: 4.5rem; font-weight: 700; font-variant-numeric: tabular-nums; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
 
-        /* 🌟 新版：預設按鈕 (2x2 網格版面) */
-        .presets { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); /* 切割成左右均等的兩欄 */
-            gap: 12px; /* 按鈕之間的十字間距 */
-            margin-bottom: 25px; 
-            width: 100%; 
-        }
+        .presets { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 25px; width: 100%; }
         .preset-btn {
             background: #2c2c2c; border: 1px solid #333; color: #ccc; border-radius: 10px;
-            display: flex; align-items: stretch; /* 讓內部元素等高 */
-            overflow: hidden; transition: 0.2s;
+            display: flex; align-items: stretch; overflow: hidden; transition: 0.2s;
         }
         .preset-btn:hover { border-color: #666; }
         .preset-btn.active { background: var(--text); color: var(--bg-color); font-weight: bold; border-color: var(--text); }
-        
-        /* 名稱與時間置中顯示 */
-        .preset-name { 
-            padding: 12px 10px; cursor: pointer; font-size: 0.95rem; flex: 1; 
-            display: flex; align-items: center; justify-content: center;
-        }
-        /* 編輯小圖示固定在右側 */
+        .preset-name { padding: 12px 10px; cursor: pointer; font-size: 0.95rem; flex: 1; display: flex; align-items: center; justify-content: center; }
         .preset-edit {
             padding: 0 12px; background: rgba(0,0,0,0.2); cursor: pointer; font-size: 0.85rem;
-            border-left: 1px solid rgba(255,255,255,0.1); opacity: 0.6;
-            display: flex; align-items: center; justify-content: center;
-            transition: 0.2s;
+            border-left: 1px solid rgba(255,255,255,0.1); opacity: 0.6; display: flex; align-items: center; justify-content: center; transition: 0.2s;
         }
         .preset-edit:hover { opacity: 1; background: rgba(255,255,255,0.2); }
 
-        /* 控制按鈕 */
         .controls { display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; }
         .btn-main { padding: 12px 40px; font-size: 1.1rem; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; transition: transform 0.1s; }
         .btn-start { background-color: var(--primary); color: white; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4); }
         .btn-reset { background-color: transparent; border: 2px solid #444; color: #888; }
         .btn-main:active { transform: scale(0.96); }
 
-        /* 音樂面板 */
-        .audio-panel { background: #181818; padding: 15px; border-radius: 12px; text-align: left; border: 1px solid #333; }
+        /* 面板設定區 */
+        .settings-panel { background: #181818; padding: 15px; border-radius: 12px; text-align: left; border: 1px solid #333; }
+        .main-tabs { display: flex; margin-bottom: 15px; border-bottom: 2px solid #333; }
+        .main-tab { padding: 8px 15px; cursor: pointer; color: #888; font-weight: bold; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: 0.2s;}
+        .main-tab.active { color: var(--text); border-bottom-color: var(--primary); }
+        
+        /* 內部小標籤 */
+        .sub-tabs { display: flex; margin-bottom: 10px; border-bottom: 1px solid #333; }
+        .sub-tab { padding: 6px 12px; cursor: pointer; color: #666; font-size: 0.85rem; border-bottom: 2px solid transparent; }
+        .sub-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        
         .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.9rem; color: #aaa; }
         .switch-group { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .tabs { display: flex; margin-bottom: 10px; border-bottom: 1px solid #333; }
-        .tab { padding: 6px 12px; cursor: pointer; color: #666; font-size: 0.85rem; border-bottom: 2px solid transparent; }
-        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
-        input[type="text"].yt-input { width: 100%; padding: 8px; background: #2a2a2a; border: none; color: white; border-radius: 4px; box-sizing: border-box; }
-        .hidden { display: none; }
+        input[type="text"].ui-input { width: 100%; padding: 8px; background: #2a2a2a; border: none; color: white; border-radius: 4px; box-sizing: border-box; }
+        .setting-row { margin-bottom: 12px; }
+        .setting-label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 5px; }
+        input[type="file"] { font-size: 0.8rem; color: #888; }
         input[type="range"] { width: 100%; accent-color: var(--primary); height: 4px; }
+        .hidden { display: none !important; }
+
+        /* 🌟 沉浸式全螢幕提醒視窗 */
+        .fullscreen-modal {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #000; background-size: cover; background-position: center;
+            z-index: 9999; display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.5s ease-in-out;
+        }
+        .fullscreen-modal.show { opacity: 1; pointer-events: auto; }
+        
+        /* 預設背景圖 (如果使用者沒設定) */
+        .fullscreen-modal::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); /* 讓文字清楚的暗色遮罩 */
+        }
+
+        .modal-content {
+            position: relative; z-index: 10000; background: rgba(30, 30, 30, 0.85);
+            padding: 50px; border-radius: 20px; text-align: center;
+            backdrop-filter: blur(15px); box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .modal-title { font-size: 3rem; margin: 0 0 10px 0; color: var(--primary); }
+        .modal-task { font-size: 1.5rem; color: #ddd; margin-bottom: 30px; }
+        .btn-close-modal {
+            background: var(--text); color: var(--bg-color); border: none; padding: 15px 40px;
+            font-size: 1.2rem; border-radius: 50px; cursor: pointer; font-weight: bold; transition: 0.2s;
+        }
+        .btn-close-modal:hover { transform: scale(1.05); }
     </style>
 </head>
 <body>
@@ -154,185 +155,185 @@
         <button class="btn-main btn-reset" onclick="resetTimer()">重置</button>
     </div>
 
-    <div class="audio-panel">
-        <div class="panel-header">
-            <span>🎧 背景音樂</span>
-            <div class="switch-group">
-                <input type="checkbox" id="musicToggle" checked> <label for="musicToggle">開啟</label>
+    <div class="settings-panel">
+        <div class="main-tabs">
+            <div class="main-tab active" onclick="switchMainTab('musicTab')">🎧 背景音樂</div>
+            <div class="main-tab" onclick="switchMainTab('alertTab')">🔔 提醒設定</div>
+        </div>
+
+        <div id="musicTab" class="tab-content">
+            <div class="panel-header">
+                <div class="switch-group">
+                    <input type="checkbox" id="musicToggle" checked> <label for="musicToggle">專注時播放</label>
+                </div>
+            </div>
+            <div class="sub-tabs">
+                <div class="sub-tab active" onclick="switchSubTab('youtube')">YouTube</div>
+                <div class="sub-tab" onclick="switchSubTab('local')">本地檔案</div>
+            </div>
+            <div id="youtubeInput">
+                <input type="text" id="ytUrl" class="ui-input" placeholder="YouTube URL / ID" value="jfKfPfyJRdk">
+            </div>
+            <div id="localInput" class="hidden">
+                <input type="file" id="localFile" accept="audio/*">
+                <audio id="localAudioPlayer" loop></audio>
+            </div>
+            <div style="margin-top:10px; display:flex; gap:10px; color:#666; font-size:0.8rem; align-items:center;">
+                <span>音量</span>
+                <input type="range" id="volumeSlider" min="0" max="100" value="50">
             </div>
         </div>
-        <div class="tabs">
-            <div class="tab active" onclick="switchTab('youtube')">YouTube</div>
-            <div class="tab" onclick="switchTab('local')">本地檔案</div>
+
+        <div id="alertTab" class="tab-content hidden">
+            <div class="setting-row">
+                <span class="setting-label">自訂通知背景圖 (選填)</span>
+                <input type="file" id="bgImageFile" accept="image/*">
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">自訂 10 秒鬧鈴音樂 (選填，未設定則使用預設電子音)</span>
+                <input type="file" id="alarmSoundFile" accept="audio/*">
+            </div>
+            <div style="font-size: 0.75rem; color: #666; margin-top: 10px;">
+                * 時間到時，畫面將全螢幕顯示您的背景圖並播放鬧鈴。
+            </div>
         </div>
-        <div id="youtubeInput">
-            <input type="text" id="ytUrl" class="yt-input" placeholder="YouTube URL / ID" value="jfKfPfyJRdk">
-        </div>
-        <div id="localInput" class="hidden">
-            <input type="file" id="localFile" accept="audio/*">
-            <audio id="localAudioPlayer" loop></audio>
-        </div>
-        <div style="margin-top:10px; display:flex; gap:10px; color:#666; font-size:0.8rem; align-items:center;">
-            <span>音量</span>
-            <input type="range" id="volumeSlider" min="0" max="100" value="50">
-        </div>
+    </div>
+</div>
+
+<div id="fullscreenModal" class="fullscreen-modal" style="background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80');">
+    <div class="modal-content">
+        <h1 class="modal-title">時間到！</h1>
+        <p class="modal-task" id="modalTaskText">該階段已完成</p>
+        <button class="btn-close-modal" onclick="closeAlarmModal()">關閉提醒</button>
     </div>
 </div>
 
 <div id="player"></div>
 
 <script>
-    // --- APP 狀態 ---
     let state = {
-        timeLeft: 25 * 60,
-        initialTime: 25 * 60,
-        isRunning: false,
-        timerId: null,
-        currentPresetIndex: 0,
-        musicSource: 'youtube', 
-        isMusicEnabled: true,
+        timeLeft: 25 * 60, initialTime: 25 * 60, isRunning: false, timerId: null, currentPresetIndex: 0,
+        musicSource: 'youtube', isMusicEnabled: true,
         presets: [
-            { label: "番茄鐘", minutes: 25, type: 'work' },
-            { label: "短休", minutes: 5, type: 'break' },
-            { label: "長休", minutes: 15, type: 'break' },
-            { label: "深度", minutes: 50, type: 'work' }
-        ]
+            { label: "番茄鐘", minutes: 25, type: 'work' }, { label: "短休", minutes: 5, type: 'break' },
+            { label: "長休", minutes: 15, type: 'break' }, { label: "深度", minutes: 50, type: 'work' }
+        ],
+        alarmAudioObj: new Audio(), // 存放自訂鬧鈴
+        alarmTimeoutId: null // 10秒停止計時器
     };
 
     function init() {
-        renderPresets();
-        updateDisplay();
-        startClock();
-        
+        renderPresets(); updateDisplay(); startClock();
         document.getElementById('volumeSlider').addEventListener('input', (e) => setVolume(e.target.value));
         document.getElementById('musicToggle').addEventListener('change', (e) => {
             state.isMusicEnabled = e.target.checked;
-            if (!state.isMusicEnabled) pauseAudio();
-            else if (state.isRunning) loadAndPlayAudio();
+            if (!state.isMusicEnabled) pauseAudio(); else if (state.isRunning) loadAndPlayAudio();
         });
+
+        // 監聽使用者上傳自訂背景圖
+        document.getElementById('bgImageFile').addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                const url = URL.createObjectURL(e.target.files[0]);
+                document.getElementById('fullscreenModal').style.backgroundImage = `url('${url}')`;
+            }
+        });
+
+        // 監聽使用者上傳自訂鬧鈴
+        document.getElementById('alarmSoundFile').addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                state.alarmAudioObj.src = URL.createObjectURL(e.target.files[0]);
+                state.alarmAudioObj.load();
+            }
+        });
+
         if ("Notification" in window && Notification.permission !== "granted") {} 
     }
 
-    function startClock() {
-        function updateTime() {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' });
-            const timeStr = now.toLocaleTimeString('zh-TW', { hour12: false });
-            document.getElementById('dateTime').innerText = `${dateStr} • ${timeStr}`;
+    // --- 介面切換邏輯 ---
+    function switchMainTab(tabId) {
+        document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        event.target.classList.add('active');
+        document.getElementById(tabId).classList.remove('hidden');
+    }
+
+    function switchSubTab(source) {
+        state.musicSource = source;
+        document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active');
+        if (source === 'youtube') {
+            document.getElementById('youtubeInput').classList.remove('hidden');
+            document.getElementById('localInput').classList.add('hidden');
+        } else {
+            document.getElementById('youtubeInput').classList.add('hidden');
+            document.getElementById('localInput').classList.remove('hidden');
         }
-        updateTime();
-        setInterval(updateTime, 1000);
+    }
+
+    // --- 計時器與基本邏輯 (與前一版相同) ---
+    function startClock() {
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('dateTime').innerText = `${now.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' })} • ${now.toLocaleTimeString('zh-TW', { hour12: false })}`;
+        }, 1000);
     }
 
     function updateTitle() {
-        const m = Math.floor(state.timeLeft / 60);
-        const s = state.timeLeft % 60;
-        const timeStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-        const task = document.getElementById('taskName').value;
-        const label = task ? task : "FocusFlow";
-        document.title = state.isRunning ? `(${timeStr}) ${label}` : `${label} - 準備中`;
+        const m = Math.floor(state.timeLeft / 60), s = state.timeLeft % 60;
+        const task = document.getElementById('taskName').value || "FocusFlow";
+        document.title = state.isRunning ? `(${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}) ${task}` : `${task} - 準備中`;
     }
 
     function applyCustomTime() {
-        const minInput = document.getElementById('customMin').value;
-        const min = parseInt(minInput);
-        
+        const min = parseInt(document.getElementById('customMin').value);
         if (min && min > 0) {
             if (state.isRunning) toggleTimer(); 
-            
-            state.initialTime = min * 60;
-            state.timeLeft = state.initialTime;
-            state.currentPresetIndex = -1; 
-            
+            state.initialTime = min * 60; state.timeLeft = state.initialTime; state.currentPresetIndex = -1; 
             document.documentElement.style.setProperty('--primary', '#ff6b6b');
-            
-            renderPresets();
-            updateDisplay();
-            updateRing();
-        } else {
-            alert("請輸入有效的時間（分鐘）！");
-        }
+            renderPresets(); updateDisplay(); updateRing();
+        } else alert("請輸入有效的時間！");
     }
 
     function renderPresets() {
-        const container = document.getElementById('presetContainer');
-        container.innerHTML = '';
-        state.presets.forEach((preset, index) => {
-            const btnWrapper = document.createElement('div');
-            btnWrapper.className = `preset-btn ${index === state.currentPresetIndex ? 'active' : ''}`;
-            
-            const nameSpan = document.createElement('div');
-            nameSpan.className = 'preset-name';
-            nameSpan.innerText = `${preset.label} (${preset.minutes}m)`;
-            nameSpan.onclick = () => selectPreset(index);
-            
-            const editSpan = document.createElement('div');
-            editSpan.className = 'preset-edit';
-            editSpan.innerHTML = '✏️';
-            editSpan.title = "編輯此預設";
-            editSpan.onclick = (e) => {
-                e.stopPropagation(); 
-                editPreset(index);
-            };
-
-            btnWrapper.appendChild(nameSpan);
-            btnWrapper.appendChild(editSpan);
-            container.appendChild(btnWrapper);
+        const container = document.getElementById('presetContainer'); container.innerHTML = '';
+        state.presets.forEach((p, i) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = `preset-btn ${i === state.currentPresetIndex ? 'active' : ''}`;
+            const name = document.createElement('div'); name.className = 'preset-name'; name.innerText = `${p.label} (${p.minutes}m)`; name.onclick = () => selectPreset(i);
+            const edit = document.createElement('div'); edit.className = 'preset-edit'; edit.innerHTML = '✏️'; edit.onclick = (e) => { e.stopPropagation(); editPreset(i); };
+            wrapper.append(name, edit); container.appendChild(wrapper);
         });
     }
 
     function selectPreset(index) {
         if (state.isRunning) return;
-        state.currentPresetIndex = index;
-        const p = state.presets[index];
-        state.initialTime = p.minutes * 60;
-        state.timeLeft = state.initialTime;
-        
+        state.currentPresetIndex = index; const p = state.presets[index];
+        state.initialTime = p.minutes * 60; state.timeLeft = state.initialTime;
         document.getElementById('customMin').value = '';
-        
-        const color = p.type === 'break' ? '#4ecdc4' : '#ff6b6b';
-        document.documentElement.style.setProperty('--primary', color);
-        
-        renderPresets();
-        updateDisplay();
-        updateRing();
+        document.documentElement.style.setProperty('--primary', p.type === 'break' ? '#4ecdc4' : '#ff6b6b');
+        renderPresets(); updateDisplay(); updateRing();
     }
 
-    function editPreset(index) {
-        if (state.isRunning) {
-            alert("計時中無法修改預設時間，請先暫停！");
-            return;
-        }
-        const p = state.presets[index];
-        const label = prompt("請輸入新的標籤名稱：", p.label);
-        if (label === null) return; 
-        
-        const min = prompt(`請輸入「${label}」的分鐘數：`, p.minutes);
-        if (min === null) return; 
-
-        if (label.trim() !== '' && min && !isNaN(min) && parseInt(min) > 0) {
-            state.presets[index].label = label;
-            state.presets[index].minutes = parseInt(min);
-            if (state.currentPresetIndex === index) selectPreset(index);
-            else renderPresets();
-        } else {
-            alert("輸入無效，請確保名稱不為空且時間為大於 0 的數字。");
-        }
+    function editPreset(i) {
+        if (state.isRunning) { alert("請先暫停！"); return; }
+        const p = state.presets[i];
+        const label = prompt("標籤名稱：", p.label); if (label === null) return; 
+        const min = prompt(`「${label}」的分鐘數：`, p.minutes); if (min === null) return; 
+        if (label.trim() !== '' && min && parseInt(min) > 0) {
+            p.label = label; p.minutes = parseInt(min);
+            if (state.currentPresetIndex === i) selectPreset(i); else renderPresets();
+        } else alert("輸入無效");
     }
 
     function updateDisplay() {
-        const m = Math.floor(state.timeLeft / 60);
-        const s = state.timeLeft % 60;
-        document.getElementById('timeDisplay').innerText = 
-            `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        const m = Math.floor(state.timeLeft / 60), s = state.timeLeft % 60;
+        document.getElementById('timeDisplay').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         updateTitle();
     }
 
     function updateRing() {
-        const circle = document.getElementById('progressRing');
-        const total = 754;
-        const offset = total - (state.timeLeft / state.initialTime) * total;
-        circle.style.strokeDashoffset = offset;
+        const offset = 754 - (state.timeLeft / state.initialTime) * 754;
+        document.getElementById('progressRing').style.strokeDashoffset = offset;
     }
 
     function toggleTimer() {
@@ -340,22 +341,12 @@
         if (Notification.permission === "default") Notification.requestPermission();
 
         if (state.isRunning) {
-            clearInterval(state.timerId);
-            state.isRunning = false;
-            btn.innerText = "繼續";
-            btn.style.opacity = "0.7";
-            pauseAudioWithFade();
+            clearInterval(state.timerId); state.isRunning = false; btn.innerText = "繼續"; btn.style.opacity = "0.7"; pauseAudioWithFade();
         } else {
             if (state.timeLeft <= 0) return;
-            state.isRunning = true;
-            btn.innerText = "暫停";
-            btn.style.opacity = "1";
-            loadAndPlayAudio();
-            
+            state.isRunning = true; btn.innerText = "暫停"; btn.style.opacity = "1"; loadAndPlayAudio();
             state.timerId = setInterval(() => {
-                state.timeLeft--;
-                updateDisplay();
-                updateRing();
+                state.timeLeft--; updateDisplay(); updateRing();
                 if (state.timeLeft <= 0) timerFinished();
             }, 1000);
         }
@@ -363,158 +354,108 @@
     }
 
     function resetTimer() {
-        clearInterval(state.timerId);
-        state.isRunning = false;
-        state.timeLeft = state.initialTime;
-        updateDisplay();
-        updateRing();
-        document.getElementById('startBtn').innerText = "開始";
-        pauseAudio();
-        resetAudioPosition();
+        clearInterval(state.timerId); state.isRunning = false; state.timeLeft = state.initialTime;
+        updateDisplay(); updateRing(); document.getElementById('startBtn').innerText = "開始"; pauseAudio(); resetAudioPosition();
     }
 
+    // 🌟 核心修改：時間到時的行為
     function timerFinished() {
-        clearInterval(state.timerId);
-        state.isRunning = false;
-        document.getElementById('startBtn').innerText = "開始";
-        pauseAudioWithFade();
-        playAlarmSound();
-        sendNotification();
-        updateTitle();
-        alert("🎉 時間到！階段完成！");
+        clearInterval(state.timerId); state.isRunning = false; document.getElementById('startBtn').innerText = "開始";
+        pauseAudioWithFade(); // 停止背景音樂
+        
+        // 1. 系統通知 (確保使用者切換回視窗)
+        if (Notification.permission === "granted") {
+            new Notification("⏰ FocusFlow 時間到！", { body: `任務已完成，請回網頁查看。`, icon: "https://cdn-icons-png.flaticon.com/512/3209/3209931.png" });
+        }
+
+        // 2. 顯示全螢幕視窗
+        const task = document.getElementById('taskName').value || "該階段";
+        document.getElementById('modalTaskText').innerText = `${task} 已完成！`;
+        document.getElementById('fullscreenModal').classList.add('show');
+
+        // 3. 播放鬧鈴 (持續 10 秒)
+        trigger10SecAlarm();
     }
 
-    function sendNotification() {
-        if (Notification.permission === "granted") {
-            const task = document.getElementById('taskName').value || "專注時段";
-            new Notification("⏰ FocusFlow 時間到！", {
-                body: `您剛剛完成了：${task}\n起來走動一下吧！`,
-                icon: "https://cdn-icons-png.flaticon.com/512/3209/3209931.png"
-            });
+    // 🌟 觸發 10 秒鬧鈴邏輯
+    function trigger10SecAlarm() {
+        if (state.alarmAudioObj.src) {
+            // 使用者有上傳音樂檔案
+            state.alarmAudioObj.currentTime = 0;
+            state.alarmAudioObj.play();
+            // 10秒後自動暫停
+            state.alarmTimeoutId = setTimeout(() => {
+                state.alarmAudioObj.pause();
+                state.alarmAudioObj.currentTime = 0;
+            }, 10000);
+        } else {
+            // 使用預設的 Web Audio API 連續電子音 (長度剛好 10 秒)
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            const now = ctx.currentTime;
+            function beep(t) {
+                const osc = ctx.createOscillator(); const g = ctx.createGain();
+                osc.connect(g); g.connect(ctx.destination);
+                osc.frequency.value = 880;
+                g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.01, t+0.15);
+                osc.start(t); osc.stop(t+0.15);
+            }
+            // 排程 10 秒鐘的連續嗶嗶聲 (每秒響兩聲)
+            for(let i=0; i<10; i++) {
+                beep(now + i);
+                beep(now + i + 0.2);
+            }
         }
     }
 
-    // 音訊引擎
+    // 🌟 關閉全螢幕提醒
+    function closeAlarmModal() {
+        document.getElementById('fullscreenModal').classList.remove('show');
+        // 強制停止使用者上傳的鬧鈴
+        if (state.alarmAudioObj.src) {
+            state.alarmAudioObj.pause();
+            state.alarmAudioObj.currentTime = 0;
+            clearTimeout(state.alarmTimeoutId);
+        }
+    }
+
+    // --- 音訊引擎 (YouTube) ---
     var player;
     function onYouTubeIframeAPIReady() {
-        const id = extractVideoID(document.getElementById('ytUrl').value) || 'RDv8prPo9fYu0';
-        player = new YT.Player('player', {
-            height: '0', width: '0', videoId: id,
-            playerVars: { 'playsinline': 1, 'controls': 0, 'rel': 0 },
-            events: {
-                'onReady': (e) => e.target.setVolume(document.getElementById('volumeSlider').value),
-                'onStateChange': onPlayerStateChange
-            }
-        });
+        const id = extractVideoID(document.getElementById('ytUrl').value) || 'jfKfPfyJRdk';
+        player = new YT.Player('player', { height: '0', width: '0', videoId: id, playerVars: { 'playsinline': 1, 'controls': 0, 'rel': 0 }, events: { 'onReady': (e) => e.target.setVolume(document.getElementById('volumeSlider').value), 'onStateChange': onPlayerStateChange }});
     }
-
-    function onPlayerStateChange(event) {
-        if (event.data === 0) { player.seekTo(0); player.playVideo(); }
-    }
-    
-    var tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    var firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-    function switchTab(source) {
-        state.musicSource = source;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        if (source === 'youtube') {
-            document.querySelectorAll('.tab')[0].classList.add('active');
-            document.getElementById('youtubeInput').classList.remove('hidden');
-            document.getElementById('localInput').classList.add('hidden');
-        } else {
-            document.querySelectorAll('.tab')[1].classList.add('active');
-            document.getElementById('youtubeInput').classList.add('hidden');
-            document.getElementById('localInput').classList.remove('hidden');
-        }
-    }
+    function onPlayerStateChange(event) { if (event.data === 0) { player.seekTo(0); player.playVideo(); } }
+    var tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api"; var firstScriptTag = document.getElementsByTagName('script')[0]; firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
     function loadAndPlayAudio() {
-        if (!state.isMusicEnabled) return;
-        const volume = document.getElementById('volumeSlider').value;
+        if (!state.isMusicEnabled) return; const volume = document.getElementById('volumeSlider').value;
         try {
             if (state.musicSource === 'youtube') {
                 if (!player || typeof player.playVideo !== 'function') return;
                 let id = extractVideoID(document.getElementById('ytUrl').value);
-                if (id && player.getVideoData && player.getVideoData()['video_id'] !== id) {
-                    player.loadVideoById(id);
-                }
-                player.setVolume(volume);
-                player.playVideo();
+                if (id && player.getVideoData && player.getVideoData()['video_id'] !== id) player.loadVideoById(id);
+                player.setVolume(volume); player.playVideo();
             } else {
-                const lp = document.getElementById('localAudioPlayer');
-                const file = document.getElementById('localFile').files[0];
+                const lp = document.getElementById('localAudioPlayer'); const file = document.getElementById('localFile').files[0];
                 if (file && !lp.src) lp.src = URL.createObjectURL(file);
-                if (file || lp.src) {
-                    lp.volume = 0; lp.play();
-                    let v = 0, t = volume/100;
-                    let fade = setInterval(() => {
-                        if (v >= t) clearInterval(fade); else { v+=0.05; lp.volume = Math.min(v,t); }
-                    }, 100);
-                }
+                if (file || lp.src) { lp.volume = 0; lp.play(); let v = 0, t = volume/100; let fade = setInterval(() => { if (v >= t) clearInterval(fade); else { v+=0.05; lp.volume = Math.min(v,t); } }, 100); }
             }
-        } catch(e) { console.error(e); }
+        } catch(e) {}
     }
 
-    function pauseAudio() {
-        if (player && typeof player.pauseVideo === 'function') player.pauseVideo();
-        document.getElementById('localAudioPlayer').pause();
-    }
-
+    function pauseAudio() { if (player && typeof player.pauseVideo === 'function') player.pauseVideo(); document.getElementById('localAudioPlayer').pause(); }
     function pauseAudioWithFade() {
         if (state.musicSource === 'youtube' && player) {
-            let vol = player.getVolume();
-            let fade = setInterval(() => {
-                vol -= 5;
-                if (vol <= 0) { clearInterval(fade); player.pauseVideo(); player.setVolume(document.getElementById('volumeSlider').value); }
-                else player.setVolume(vol);
-            }, 100);
+            let vol = player.getVolume(); let fade = setInterval(() => { vol -= 5; if (vol <= 0) { clearInterval(fade); player.pauseVideo(); player.setVolume(document.getElementById('volumeSlider').value); } else player.setVolume(vol); }, 100);
         } else {
-            const lp = document.getElementById('localAudioPlayer');
-            let vol = lp.volume;
-            let fade = setInterval(() => {
-                vol -= 0.05;
-                if (vol <= 0) { clearInterval(fade); lp.pause(); lp.volume = document.getElementById('volumeSlider').value/100; }
-                else lp.volume = Math.max(0, vol);
-            }, 100);
+            const lp = document.getElementById('localAudioPlayer'); let vol = lp.volume; let fade = setInterval(() => { vol -= 0.05; if (vol <= 0) { clearInterval(fade); lp.pause(); lp.volume = document.getElementById('volumeSlider').value/100; } else lp.volume = Math.max(0, vol); }, 100);
         }
     }
-
-    function resetAudioPosition() {
-        const lp = document.getElementById('localAudioPlayer');
-        if(!lp.paused) lp.pause();
-        lp.currentTime = 0;
-    }
-
-    function setVolume(val) {
-        if (player && typeof player.setVolume === 'function') player.setVolume(val);
-        document.getElementById('localAudioPlayer').volume = val / 100;
-    }
-
-    function extractVideoID(url) {
-        if (!url) return null;
-        var match = url.match(/^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/);
-        return (match && match[7].length == 11) ? match[7] : url;
-    }
-
-    function playAlarmSound() {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        const ctx = new AudioContext();
-        const now = ctx.currentTime;
-        function beep(t) {
-            const osc = ctx.createOscillator();
-            const g = ctx.createGain();
-            osc.connect(g); g.connect(ctx.destination);
-            osc.frequency.value = 880;
-            g.gain.setValueAtTime(0.3, t);
-            g.gain.exponentialRampToValueAtTime(0.01, t+0.15);
-            osc.start(t); osc.stop(t+0.15);
-        }
-        [0,0.2,0.4, 1.2,1.4,1.6, 2.4,2.6,2.8].forEach(dt => beep(now+dt));
-    }
+    function resetAudioPosition() { const lp = document.getElementById('localAudioPlayer'); if(!lp.paused) lp.pause(); lp.currentTime = 0; }
+    function setVolume(val) { if (player && typeof player.setVolume === 'function') player.setVolume(val); document.getElementById('localAudioPlayer').volume = val / 100; }
+    function extractVideoID(url) { if (!url) return null; var match = url.match(/^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/); return (match && match[7].length == 11) ? match[7] : url; }
 
     init();
 </script>
