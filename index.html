@@ -401,7 +401,7 @@
 
     var player;
     function onYouTubeIframeAPIReady() {
-        const id = extractVideoID(document.getElementById('ytUrl').value) || 'jfKfPfyJRdk';
+        const id = extractVideoID(document.getElementById('ytUrl').value) || '9jK-NcRmVcw';
         player = new YT.Player('player', { height: '0', width: '0', videoId: id, playerVars: { 'playsinline': 1, 'controls': 0, 'rel': 0 }, events: { 'onReady': (e) => e.target.setVolume(document.getElementById('volumeSlider').value), 'onStateChange': onPlayerStateChange }});
     }
     function onPlayerStateChange(event) { if (event.data === 0) { player.seekTo(0); player.playVideo(); } }
